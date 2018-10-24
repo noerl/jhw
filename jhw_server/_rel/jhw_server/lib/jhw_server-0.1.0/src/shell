@@ -1,0 +1,32 @@
+登录
+curl -i -d '{"user":"18682410521","pwd":"20181010"}' http://localhost:9231/login
+
+
+查询物品
+curl -i -d '{"type":4, "data:":[]}' -H "Cookie:user=18682410521;aid=8b7b2f272bb9840be7b6f30ab913ad69" http://localhost:9231/item
+
+
+添加物品
+curl -i -d '{"type":1, "data":{"code":"9898","name":"好吃点","count":100}}' -H "Cookie:user=18682410521;aid=8b7b2f272bb9840be7b6f30ab913ad69" http://localhost:9231/item
+
+删除物品
+curl -i -d '{"type":2, "data":{"idList":["20181023-000001"]}}' -H "Cookie:user=18682410521;aid=8b7b2f272bb9840be7b6f30ab913ad69" http://localhost:9231/item
+
+更新物品
+curl -i -d '{"type":3, "data":{"id":"20181023-000001","code":"0876","name":"abc","count":200}}' -H "Cookie:user=18682410521;aid=8b7b2f272bb9840be7b6f30ab913ad69" http://localhost:9231/item
+
+
+添加账号
+curl -i -d '{"type":1, "data":{"user":"18500519190","pwd":"123456","auth":1,"shop":"天通苑"}}' -H "Cookie:user=18682410521;aid=756c975892f1538996ee87c4e2f3d828" http://localhost:9231/account
+
+删除账号
+curl -i -d '{"type":2, "data":{"user":"18500519190"}}' -H "Cookie:user=18682410521;aid=756c975892f1538996ee87c4e2f3d828" http://localhost:9231/account
+
+查询账号
+curl -i -d '{"type":3, "data":[]}' -H "Cookie:user=18682410521;aid=756c975892f1538996ee87c4e2f3d828" http://localhost:9231/account
+
+查询物品
+curl -i -d '{"type":4, "data":[]}' -H "Cookie:user=18682410521;aid=756c975892f1538996ee87c4e2f3d828" http://localhost:9231/account
+
+
+

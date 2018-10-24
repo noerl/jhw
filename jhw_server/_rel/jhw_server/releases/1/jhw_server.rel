@@ -1,0 +1,13 @@
+{release,{"jhw_server","1"},
+         {erts,"7.3"},
+         [{kernel,"4.2"},
+          {stdlib,"2.8"},
+          {mnesia,"4.13.3"},
+          {jsx,"2.8.2"},
+          {ranch,"1.2.1"},
+          {crypto,"3.6.3"},
+          {cowlib,"1.0.2"},
+          {cowboy,"1.0.4"},
+          {jhw_server,"0.1.0"},
+          {sasl,"2.7"},
+          {runtime_tools,"1.9.3"}]}. 
