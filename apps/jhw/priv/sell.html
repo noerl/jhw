@@ -1,0 +1,24 @@
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf8">
+  <title>上传收益</title>
+</head>
+
+<body>
+  <form method="post" enctype="multipart/form-data" action="/upload/sell" id="stockform">
+    <input type="file" name="inputfile" />
+    <br>
+    超市:<select name="mall" form="stockform">
+      ${option}
+    </select>
+    <br>
+    手机号:<input type="text" name="phone" />
+    <br>
+    动态码:<input type="text" name="key" />
+    <br>
+    <input type="submit" />
+  </form>
+</body>
+
+</html>

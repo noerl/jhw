@@ -1,0 +1,16 @@
+{application, jhw,
+ [{description, "An OTP application"},
+  {vsn, "1.0.0"},
+  {registered, []},
+  {mod, {jhw_app, []}},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.
