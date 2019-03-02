@@ -57,20 +57,20 @@ create(<<Head:?FILE_HEAD_LEN, Body/binary>>, Mid) ->
 
 create_sql(Bin, Mid) ->
 	BodyList = binary:split(Bin, <<"\r\n">>, [global]),
-	CurMon = jhw_util:cur_mon(),
-	create_sql(BodyList, [], [], Mid, CurMon).
+	CurTime = jhw_util:curtime(),
+	create_sql(BodyList, [], [], Mid, CurTime).
 
 
-create_sql([<<>>|List], SqlList, ErrorList, Mid, CurMon) ->
-	create_sql(List, SqlList, ErrorList, Mid, CurMon);
-create_sql([Body|List], SqlList, ErrorList, Mid, CurMon) ->
+create_sql([<<>>|List], SqlList, ErrorList, Mid, CurTime) ->
+	create_sql(List, SqlList, ErrorList, Mid, CurTime);
+create_sql([Body|List], SqlList, ErrorList, Mid, CurTime) ->
 	case binary:split(Body, <<",">>, [global]) of
 		[Code, Name, CountBin, SellPriceBin] ->
 			Count = jhw_util:binary_to_num(CountBin),
 			SellPrice = jhw_util:binary_to_num(SellPriceBin),
 
 			SelectSql = io_lib:format("select `count`, `buyPrice` from stock where `mid` = '~s' and `code` = '~s'", [Mid, Code]),
-			{Profit, SqlList1} = 
+			{Profit, SqlList1, Price} = 
 				case jhw_sql:run(SelectSql) of
 					{ok, _, [[OldCount, BuyPrice]]} -> 
 						io:format("info:~p~n", [[OldCount, BuyPrice, SellPrice, Count]]),
@@ -83,16 +83,16 @@ create_sql([Body|List], SqlList, ErrorList, Mid, CurMon) ->
 									0
 							end,
 						UpdateStock = io_lib:format("update stock set `count` = '~p' where `mid` = '~s' and `code` = '~s'", [LastCount, Mid, Code]),
-						{ProfitTmp, [UpdateStock|SqlList]};
+						{ProfitTmp, [UpdateStock|SqlList], BuyPrice};
 					_ ->
-						{SellPrice, SqlList}
+						{SellPrice, SqlList, 0}
 				end,
-			Sql = io_lib:format("replace into sale(`mid`,`code`,`mon`,`name`,`count`,`price`, `profit`) values ('~s','~s','~p','~s','~p','~p','~p');", [Mid, Code, CurMon, Name, Count, SellPrice, Profit]),
-			create_sql(List, [Sql|SqlList1], ErrorList, Mid, CurMon);
+			Sql = io_lib:format("replace into sale(`mid`,`code`,`time`,`name`,`count`,`sale`, `buyPrice` `profit`) values ('~s','~s','~p','~s','~p','~p','~p','~p');", [Mid, Code, CurTime, Name, Count, SellPrice, Price, Profit]),
+			create_sql(List, [Sql|SqlList1], ErrorList, Mid, CurTime);
 		_ ->
-			create_sql(List, SqlList, [Body|ErrorList], Mid, CurMon)
+			create_sql(List, SqlList, [Body|ErrorList], Mid, CurTime)
 	end;
-create_sql([], SqlList, ErrorList, _Mid, _CurMon) ->
+create_sql([], SqlList, ErrorList, _Mid, _CurTime) ->
 	case jhw_sql:transaction(SqlList) of
 		{atomic, SuccList} ->
 			jsx:encode([

@@ -1,4 +1,4 @@
--module(jhw_report_purchase).
+-module(jhw_purchase).
 
 
 -export([init/2]).

@@ -37,46 +37,42 @@ handle(Req) ->
 	{ok, Body, _Req} = cowboy_req:read_body(Req),
 	PostList = jsx:decode(Body),
 	Mid = proplists:get_value(<<"mid">>, PostList),
-	StartTime = proplists:get_value(<<"startTime">>, PostList),
-	EndTime = proplists:get_value(<<"endTime">>, PostList),
+	StartTime = proplists:get_value(<<"startTime">>, PostList) div 1000,
+	EndTime = proplists:get_value(<<"endTime">>, PostList) div 1000,
 
-	SqlStr = 
-		case Mid of
-			0 -> 
-				io_lib:format(
-					"select `code`,
-							`name`,
-							`count`,
-							`profit`
-						from sale
-						where `time` >= '~s'
-						and `time` <= '~s'", 
-				[StartTime, EndTime]);
-			_ ->
-				io_lib:format(
-					"select `code`,
-							`name`,
-							`count`,
-							`profit`
-						from 'sale'
-						where `mid` = '~p'
-						and `time` >= '~s'
-						and `time` <= '~s'",
-				[Mid, StartTime, EndTime])
-		end,
+	SqlStr = append(Mid, StartTime, EndTime),
 	resp(SqlStr).
 
 
 
 resp(SqlStr) ->
 	case jhw_sql:run(SqlStr) of
-		{ok, _, GoodsList} -> 
-			Total = lists:sum([Profit || [_Code, _Name, _Count, Profit] <- GoodsList]),
-			ProfitList = [[{<<"code">>, Code}, {<<"name">>, Name}, {<<"count">>, Count}, {<<"profit">>, Profit}] || [Code, Name, Count, Profit] <- GoodsList],
-			{ok, jsx:encode([{<<"status">>, <<"ok">>}, {<<"profit">>, [{<<"total">>, Total}, {<<"detail">>, ProfitList}]}])};
+		{ok, _FieldList, []} -> 
+			{ok, jsx:encode([{<<"status">>, <<"ok">>}, {<<"profit">>, []}])};
+		{ok, FieldList, ProfitList} -> 
+			Purchase = [lists:zip(FieldList, Profit) || Profit <- ProfitList],
+			{ok, jsx:encode([{<<"status">>, <<"ok">>}, {<<"profit">>, Purchase}])};
 		_error ->
 			{error, 1005}
 	end.
+
+append(Mid, StartTime, EndTime) ->
+	SqlStr = 
+		io_lib:format(
+			"select *
+				from sale
+				where `time` >= '~p'
+				and `time` <= '~p'",
+		[StartTime, EndTime]),		
+	append([{<<"mid">>, Mid}], SqlStr).
+
+
+append([{_Key, 0}|List], SqlStr) ->
+	append(List, SqlStr);
+append([{Key, Value}|List], SqlStr) ->
+	SqlStr1 = io_lib:format("~s and `~s` = '~p'", [SqlStr,Key,Value]),
+	append(List, SqlStr1);
+append([], SqlStr) -> SqlStr.
 
 
 
