@@ -9,6 +9,7 @@ init(Req0, Opts) ->
 	NewReq = cowboy_req:reply(200, #{
 		<<"content-type">> => <<"application/json; charset=utf-8">>
 	}, RespBody, Req0),
+	io:format("req end:~p~n", [RespBody]),
 	{ok, NewReq, Opts}.
 
 

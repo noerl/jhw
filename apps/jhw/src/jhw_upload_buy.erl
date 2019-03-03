@@ -85,7 +85,6 @@ create_sql([Body|List], SqlList, ErrorList, Mid) ->
 			create_sql(List, SqlList, [Body|ErrorList], Mid)
 	end;
 create_sql([], SqlList, ErrorList, _Mid) ->
-	io:format("SqlList:~p~n", [SqlList]),
 	case jhw_sql:transaction(SqlList) of
 		{atomic, SuccList} ->
 			jsx:encode([

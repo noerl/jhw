@@ -14,6 +14,7 @@
 
 
 handle(Req) ->
+	io:format("req start:~p~n", [Req]),
 	<<"JHW ", Auth/binary>> = cowboy_req:header(<<"authorization">>, Req),
 	[UidBin, Secret] = binary:split(Auth, <<":">>),
 	handle(binary_to_integer(UidBin), Secret).
