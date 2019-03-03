@@ -34,6 +34,7 @@ handle(Req) ->
     case jhw_sql:insert(Sql) of
         {ok, Id} ->
             ets:insert(mall, #mall{id = Id, name = Name}),
+			jhw_html:mall(ets:tab2list(mall)),
             jsx:encode([{<<"status">>, <<"ok">>},{<<"mallAdd">>, [{<<"id">>, Id}, {<<"name">>, Name}]}]);
         _ ->
             {error, 1005}

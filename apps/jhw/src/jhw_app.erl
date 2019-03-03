@@ -40,10 +40,11 @@ start(_StartType, _StartArgs) ->
 			{"/upload/buy", jhw_upload_buy, []},
 			{"/upload/sell", jhw_upload_sell, []},
 			{"/price", jhw_price, [jhw_auth]},
-			{"/purchase", jhw_purchase, [jhw_auth]}
+			{"/purchase", jhw_purchase, [jhw_auth]},
+			{"/ios", cowboy_static, {priv_file, jhw, "jhw.app"}}
 		]}
 	]),
-	{ok, _} = cowboy:start_clear(http, [{port, 9999}], #{
+	{ok, _} = cowboy:start_clear(http, [{port, 80}], #{
 		env => #{dispatch => Dispatch}
 	}),
     {ok, Sup}.
@@ -74,18 +75,11 @@ load() ->
 	{ok, _, Supplier} = jhw_sql:run(<<"select * from supplier">>),
 	[ets:insert(supplier, #supplier{id=Id, name=Name}) || [Id, Name] <- Supplier],
 
-	html(MallList),
+	jhw_html:mall(MallList),
 	ok.
 
 
-html(MallList) ->
-	html(MallList, "").
 
-html([[Id, Name]|MallList], OptListStr) ->
-	OptStr = io_lib:format("<option value=\"~p\">~s</option>", [Id, Name]),
-	html(MallList, OptListStr ++ OptStr);
-html([], OptListStr) -> 
-	ets:insert(html, #html{key = <<"option">>, value = list_to_binary(OptListStr)}).
 
 	
 

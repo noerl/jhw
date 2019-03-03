@@ -1,7 +1,7 @@
 -module(jhw_html).
 -include("jhw.hrl").
 
--export([buy/0,sell/0]).
+-export([buy/0,sell/0,mall/1]).
 
 
 buy() ->
@@ -45,3 +45,12 @@ char_end(<<C, Bin/binary>>, Key) ->
 char_end(<<>>, Bin) -> Bin.
 
 
+
+mall(MallList) ->
+	mall(MallList, "").
+
+mall([[Id, Name]|MallList], OptListStr) ->
+	OptStr = io_lib:format("<option value=\"~p\">~s</option>", [Id, Name]),
+	mall(MallList, OptListStr ++ OptStr);
+mall([], OptListStr) -> 
+	ets:insert(html, #html{key = <<"option">>, value = list_to_binary(OptListStr)}).
