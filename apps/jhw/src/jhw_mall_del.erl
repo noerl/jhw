@@ -34,7 +34,7 @@ handle(Req) ->
     case jhw_sql:run(Sql) of
         ok ->
             ets:delete(mall, Id),
-			jhw_html:mall(ets:tab2list(mall)),
+			jhw_html:mall(),
             jsx:encode([{<<"status">>, <<"ok">>},{<<"mallDel">>, [{<<"id">>, Id}]}]);
         _ ->
             {error, 1005}

@@ -75,7 +75,7 @@ load() ->
 	{ok, _, Supplier} = jhw_sql:run(<<"select * from supplier">>),
 	[ets:insert(supplier, #supplier{id=Id, name=Name}) || [Id, Name] <- Supplier],
 
-	jhw_html:mall(MallList),
+	jhw_html:mall(),
 	ok.
 
 

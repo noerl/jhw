@@ -1,7 +1,7 @@
 -module(jhw_html).
 -include("jhw.hrl").
 
--export([buy/0,sell/0,mall/1]).
+-export([buy/0,sell/0,mall/0]).
 
 
 buy() ->
@@ -46,10 +46,11 @@ char_end(<<>>, Bin) -> Bin.
 
 
 
-mall(MallList) ->
-	mall(MallList, "").
 
-mall([[Id, Name]|MallList], OptListStr) ->
+mall() ->
+	mall(ets:tab2list(mall), "").
+
+mall([{mall, Id, Name}|MallList], OptListStr) ->
 	OptStr = io_lib:format("<option value=\"~p\">~s</option>", [Id, Name]),
 	mall(MallList, OptListStr ++ OptStr);
 mall([], OptListStr) -> 

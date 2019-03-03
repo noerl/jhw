@@ -11,8 +11,7 @@
 
 -record(mall, {
 	id,
-	name,
-	addr
+	name
 }).
 
 
