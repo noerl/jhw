@@ -1,40 +1,14 @@
 -module(jhw_search).
 
 
--export([init/2]).
-
+-export([init/2, handle/1]).
 
 init(Req0, Opts) ->
-	RespBody = handle(Opts, Req0),
-	NewReq = cowboy_req:reply(200, #{
-		<<"content-type">> => <<"application/json; charset=utf-8">>
-	}, RespBody, Req0),
+	NewReq = jhw_callback:handle(?MODULE, Opts, Req0),
 	{ok, NewReq, Opts}.
 
 
-
-handle(CallList, Req) ->
-	case resp(CallList, Req) of
-		{ok, RespBody} -> RespBody;
-		{error, ErrorCode} ->
-			jsx:encode([
-				{<<"status">>, <<"error">>},
-				{<<"code">>, ErrorCode}
-			])
-	end.
-
-
-resp(CallList, Req) ->
-	case jhw_callback:handle(CallList, Req) of
-		ok -> 
-			handle(Req);
-		Error ->
-			Error
-	end.
-
-
-handle(Req) ->
-	{ok, Body, _Req} = cowboy_req:read_body(Req),
+handle(#{body := Body}) ->
 	PostList = jsx:decode(Body),
 	Mid = proplists:get_value(<<"mid">>, PostList),
 	Sid = proplists:get_value(<<"sid">>, PostList),

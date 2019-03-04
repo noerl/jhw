@@ -3,40 +3,17 @@
 
 
 
--export([init/2]).
+-export([init/2, handle/1]).
 
 
 init(Req0, Opts) ->
-	RespBody = handle(Opts, Req0),
-	NewReq = cowboy_req:reply(200, #{
-		<<"content-type">> => <<"application/json; charset=utf-8">>
-	}, RespBody, Req0),
+	NewReq = jhw_callback:handle(?MODULE, Opts, Req0),
 	{ok, NewReq, Opts}.
 
 
 
-handle(CallList, Req) ->
-	case resp(CallList, Req) of
-		{ok, RespBody} -> RespBody;
-		{error, ErrorCode} ->
-			jsx:encode([
-				{<<"status">>, <<"error">>},
-				{<<"code">>, ErrorCode}
-			])
-	end.
 
-
-resp(CallList, Req) ->
-	case jhw_callback:handle(CallList, Req) of
-		ok -> 
-			handle(Req);
-		Error ->
-			Error
-	end.
-
-
-handle(_Req) ->
-    Uid = get('$uid'),
+handle(#{id := Uid}) ->
     CurTime = jhw_util:curtime(),
     case ets:lookup(user, Uid) of
         [User] -> 

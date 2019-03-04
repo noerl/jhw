@@ -5,16 +5,16 @@
 -export([init/2]).
 
 init(Req0, Opts) ->
-	{ok, Body, Req} = cowboy_req:read_body(Req0),
+	{ok, BodyCipher, Req} = cowboy_req:read_body(Req0),
+	Body = jhw_auth:decode(BodyCipher),
+	
 	UUID = cowboy_req:header(<<"uuid">>, Req0),
 	PostList = jsx:decode(Body),
 	Phone = proplists:get_value(<<"phone">>, PostList),
 	Password = proplists:get_value(<<"pwd">>, PostList),
 
 	{RespHeader, RespBody} = handle(UUID, Phone, Password),
-	NewReq = cowboy_req:reply(200, RespHeader#{
-		<<"content-type">> => <<"application/json; charset=utf-8">>
-	}, RespBody, Req),
+	NewReq = jhw_auth:resp(Req, RespHeader, RespBody),
 	{ok, NewReq, Opts}.
 
 
