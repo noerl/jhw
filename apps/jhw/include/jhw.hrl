@@ -1,5 +1,6 @@
 -record(user, {
 	id,
+	pid,
 	phone,
 	name,
 	secret,

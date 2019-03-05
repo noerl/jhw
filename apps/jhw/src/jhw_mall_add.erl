@@ -12,7 +12,7 @@ init(Req0, Opts) ->
 
 
 
-handle(#{body := Body}) ->
+handle(#{id := Uid, body := Body}) ->
 	PostList = jsx:decode(Body),
 	Name = proplists:get_value(<<"name">>, PostList),
     Sql = io_lib:format("insert into mall(`name`) values ('~s')", [Name]),
@@ -20,7 +20,10 @@ handle(#{body := Body}) ->
         {ok, Id} ->
             ets:insert(mall, #mall{id = Id, name = Name}),
 			jhw_html:mall(),
-            {ok, jsx:encode([{<<"status">>, <<"ok">>},{<<"mallAdd">>, [{<<"id">>, Id}, {<<"name">>, Name}]}])};
+			MsgList = [{<<"id">>, Id}, {<<"name">>, Name}],
+			MsgBin = jsx:encode([{<<"status">>, <<"ok">>}, {<<"mallAdd">>, MsgList}]),
+			jhw_update:broadcast(Uid, [{<<"cmd">>, <<"mallAdd">>}, {<<"data">>, MsgList}]),
+            {ok, MsgBin};
         _ ->
             {error, 1005}
     end.

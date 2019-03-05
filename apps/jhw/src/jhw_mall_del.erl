@@ -13,7 +13,7 @@ init(Req0, Opts) ->
 
 
 
-handle(#{body := Body}) ->
+handle(#{id := Uid, body := Body}) ->
 	PostList = jsx:decode(Body),
 	Id = proplists:get_value(<<"id">>, PostList),
     Sql = io_lib:format("delete from mall where `id` = '~p'", [Id]),
@@ -21,7 +21,10 @@ handle(#{body := Body}) ->
         ok ->
             ets:delete(mall, Id),
 			jhw_html:mall(),
-            {ok, jsx:encode([{<<"status">>, <<"ok">>},{<<"mallDel">>, [{<<"id">>, Id}]}])};
+			MsgList = [{<<"id">>, Id}],
+			MsgBin = jsx:encode([{<<"status">>, <<"ok">>}, {<<"mallDel">>, MsgList}]),
+			jhw_update:broadcast(Uid, [{<<"cmd">>, <<"mallDel">>}, {<<"data">>, MsgList}]),
+            {ok, MsgBin};
         _ ->
             {error, 1005}
     end.

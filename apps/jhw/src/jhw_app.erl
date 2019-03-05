@@ -41,7 +41,8 @@ start(_StartType, _StartArgs) ->
 			{"/upload/sell", jhw_upload_sell, []},
 			{"/price", jhw_price, [jhw_auth]},
 			{"/purchase", jhw_purchase, [jhw_auth]},
-			{"/ios", cowboy_static, {priv_file, jhw, "jhw.app"}}
+			{"/update", jhw_update, [jhw_auth]},
+			{"/ios", cowboy_static, {priv_file, jhw, "jhw.ipa"}}
 		]}
 	]),
 	{ok, _} = cowboy:start_clear(http, [{port, 9999}], #{

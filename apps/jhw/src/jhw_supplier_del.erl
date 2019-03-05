@@ -9,14 +9,17 @@ init(Req0, Opts) ->
 	{ok, NewReq, Opts}.
 
 
-handle(#{body := Body}) ->
+handle(#{id := Uid, body := Body}) ->
 	PostList = jsx:decode(Body),
 	Id = proplists:get_value(<<"id">>, PostList),
     Sql = io_lib:format("delete from supplier where `id` = '~p'", [Id]),
     case jhw_sql:run(Sql) of
         ok ->
             ets:delete(supplier, Id),
-            {ok, jsx:encode([{<<"status">>, <<"ok">>},{<<"supplierDel">>, [{<<"id">>, Id}]}])};
+			MsgList =  [{<<"id">>, Id}],
+			MsgBin = jsx:encode([{<<"status">>, <<"ok">>},{<<"supplierDel">>, MsgList}]),
+			jhw_update:broadcast(Uid, [{<<"cmd">>, <<"supplierDel">>}, {<<"data">>, MsgList}]),
+            {ok, MsgBin};
         _ ->
             {error, 1005}
     end.
