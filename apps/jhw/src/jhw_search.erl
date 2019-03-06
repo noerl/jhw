@@ -16,7 +16,7 @@ handle(#{body := Body}) ->
 
 	SqlStr = append([{<<"mid">>, Mid}, {<<"sid">>, Sid}]),
 	
-	SqlStr1 = io_lib:format("select * from stock where~s (`code` like '%~s%' or `barcode` like '%~s%' or `name` like '%~s%') limit 200", [SqlStr, Msg, Msg, Msg]),
+	SqlStr1 = io_lib:format("select * from stock where~s (`code` like '%~s%' or `barcode` like '%~s%' or `name` like '%~s%') limit 50", [SqlStr, Msg, Msg, Msg]),
 
 	case jhw_sql:run(SqlStr1) of
 		{ok, FieldList, StockList} -> 

@@ -1,10 +1,10 @@
 -module(jhw_upload_sell).
 
 %% 商品名称，条形码，商品店内码，正常售价
--define(EXCEL_NAME, 		<<"商品名称/utf8">>).
--define(EXCEL_CODE, 		<<"商品店内码/utf8">>).
--define(EXCEL_COUNT, 		<<"数量/utf8">>).
--define(EXCEL_PRICE, 		<<"售价/utf8">>).
+-define(EXCEL_NAME, 		<<"商品名称"/utf8>>).
+-define(EXCEL_CODE, 		<<"商品店内码"/utf8>>).
+-define(EXCEL_COUNT, 		<<"数量"/utf8>>).
+-define(EXCEL_PRICE, 		<<"售价"/utf8>>).
 
 
 -export([init/2]).
@@ -51,8 +51,9 @@ create_sql(Bin, Mid) ->
 	[Header|BodyList] = binary:split(Bin, <<"\r\n">>, [global]),
 	CurTime = jhw_util:curtime(),
 
-	IndexList = lists:seq(1, length(Header)),
-	KeyList = lists:zip(Header, IndexList),
+	HeaderList = binary:split(Header, <<",">>, [global]),
+	IndexList = lists:seq(1, length(HeaderList)),
+	KeyList = lists:zip(HeaderList, IndexList),
 	create_sql(BodyList, KeyList, [], [], Mid, CurTime).
 
 

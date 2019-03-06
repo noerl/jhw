@@ -1,10 +1,10 @@
 -module(jhw_upload_buy).
 
 %% 商品名称，条形码，商品店内码，正常售价
--define(EXCEL_NAME, 		<<"商品名称/utf8">>).
--define(EXCEL_BARCODE, 		<<"条形码/utf8">>).
--define(EXCEL_CODE, 		<<"商品店内码/utf8">>).
--define(EXCEL_PRICE, 		<<"正常售价/utf8">>).
+-define(EXCEL_NAME, 		<<"商品名称"/utf8>>).
+-define(EXCEL_BARCODE, 		<<"条形码"/utf8>>).
+-define(EXCEL_CODE, 		<<"商品店内码"/utf8>>).
+-define(EXCEL_PRICE, 		<<"正常售价"/utf8>>).
 
 
 
@@ -52,8 +52,10 @@ check(Phone, Key, FileData, Mid) ->
 
 create_sql(Bin, Mid) ->
 	[Header|BodyList] = binary:split(Bin, <<"\r\n">>, [global]),
-	IndexList = lists:seq(1, length(Header)),
-	KeyList = lists:zip(Header, IndexList),
+	HeaderList = binary:split(Header, <<",">>, [global]),
+	IndexList = lists:seq(1, length(HeaderList)),
+	KeyList = lists:zip(HeaderList, IndexList),
+	io:format("~p~n", [KeyList]),
 	create_sql(BodyList, KeyList, [], [], Mid).
 
 
