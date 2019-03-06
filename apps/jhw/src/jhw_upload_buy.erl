@@ -1,7 +1,11 @@
 -module(jhw_upload_buy).
 
--define(FILE_HEAD, <<"店内码,条码,名称,售价"/utf8>>).
--define(FILE_HEAD_LEN, 240).
+%% 商品名称，条形码，商品店内码，正常售价
+-define(EXCEL_NAME, 		<<"商品名称/utf8">>).
+-define(EXCEL_BARCODE, 		<<"条形码/utf8">>).
+-define(EXCEL_CODE, 		<<"商品店内码/utf8">>).
+-define(EXCEL_PRICE, 		<<"正常售价/utf8">>).
+
 
 
 -export([init/2]).
@@ -34,7 +38,8 @@ init(Req, Opts) ->
 
 check(Phone, Key, FileData, Mid) ->
 	case jhw_auth:check(Phone, Key) of
-		ok -> create(FileData, Mid);
+		ok ->
+			create_sql(FileData, Mid);
 		Error -> 
 			jsx:encode([
 				{<<"status">>, <<"error">>},
@@ -42,49 +47,47 @@ check(Phone, Key, FileData, Mid) ->
 			])
 	end.
 
-create(<<Head:?FILE_HEAD_LEN, Body/binary>>, Mid) ->
-	case <<Head:?FILE_HEAD_LEN>> == ?FILE_HEAD of
-		true -> 
-			create_sql(Body, Mid);
-		false ->
-			Msg = unicode:characters_to_binary(io_lib:format("标准格式：~ts, 上传格式：~ts", [?FILE_HEAD, <<Head:?FILE_HEAD_LEN>>])),
-			jsx:encode([
-				{<<"status">>, <<"error">>},
-				{<<"errorMsg">>, Msg}
-			])
-	end.
+
 	
 
-
 create_sql(Bin, Mid) ->
-	BodyList = binary:split(Bin, <<"\r\n">>, [global]),
-	create_sql(BodyList, [], [], Mid).
+	[Header|BodyList] = binary:split(Bin, <<"\r\n">>, [global]),
+	IndexList = lists:seq(1, length(Header)),
+	KeyList = lists:zip(Header, IndexList),
+	create_sql(BodyList, KeyList, [], [], Mid).
 
 
-create_sql([<<>>|List], SqlList, ErrorList, Mid) ->
-	create_sql(List, SqlList, ErrorList, Mid);
-create_sql([Body|List], SqlList, ErrorList, Mid) ->
-	case binary:split(Body, <<",">>, [global]) of
-		[Code, BarCode, Name, Price] ->
-			SelectSql = io_lib:format("select `sellPrice` from stock where `mid` = '~s' and `code` = '~s'", [Mid, Code]),
-			SqlList1 = 
-				case jhw_sql:run(SelectSql) of
-					{ok, _, [[OldPrice]]} -> 
-						case jhw_util:binary_to_num(Price) == OldPrice of
-							true -> ok;
-							false -> io:format("OldPrice:~p, Price:~s", [OldPrice, Price])
-						end,
-						SqlList;
-					_ ->
-						Sql = io_lib:format("insert into stock(`mid`,`code`,`barcode`,`name`,`sellPrice`) values ('~s','~s','~s','~s','~s');", [Mid, Code, BarCode, Name, Price]),
-						[Sql|SqlList]
+
+
+create_sql([<<>>|List], KeyList, SqlList, ErrorList, Mid) ->
+	create_sql(List, KeyList, SqlList, ErrorList, Mid);
+create_sql([Body|List], KeyList, SqlList, ErrorList, Mid) ->
+	ValueList = binary:split(Body, <<",">>, [global]),
+	{_, NameIndex} = lists:keyfind(?EXCEL_NAME, 1, KeyList),
+	{_, CodeIndex} = lists:keyfind(?EXCEL_CODE, 1, KeyList),
+	{_, BarCodeIndex} = lists:keyfind(?EXCEL_BARCODE, 1, KeyList),
+	{_, PriceIndex} = lists:keyfind(?EXCEL_PRICE, 1, KeyList),
+
+	Name = lists:nth(NameIndex, ValueList),
+	Code = lists:nth(CodeIndex, ValueList),
+	BarCode = lists:nth(BarCodeIndex, ValueList),
+	Price = lists:nth(PriceIndex, ValueList),
+
+	SelectSql = io_lib:format("select `sellPrice` from stock where `mid` = '~s' and `code` = '~s'", [Mid, Code]),
+	SqlList1 = 
+		case jhw_sql:run(SelectSql) of
+			{ok, _, [[OldPrice]]} -> 
+				case jhw_util:binary_to_num(Price) == OldPrice of
+					true -> ok;
+					false -> io:format("OldPrice:~p, Price:~s", [OldPrice, Price])
 				end,
-			create_sql(List, SqlList1, ErrorList, Mid);
-		_I ->
-			io:format("~p~n", [_I]),
-			create_sql(List, SqlList, [Body|ErrorList], Mid)
-	end;
-create_sql([], SqlList, ErrorList, _Mid) ->
+				SqlList;
+			_ ->
+				Sql = io_lib:format("insert into stock(`mid`,`code`,`barcode`,`name`,`sellPrice`) values ('~s','~s','~s','~s','~s');", [Mid, Code, BarCode, Name, Price]),
+				[Sql|SqlList]
+		end,
+	create_sql(List, KeyList, SqlList1, ErrorList, Mid);
+create_sql([], _KeyList, SqlList, ErrorList, _Mid) ->
 	case jhw_sql:transaction(SqlList) of
 		{atomic, SuccList} ->
 			jsx:encode([

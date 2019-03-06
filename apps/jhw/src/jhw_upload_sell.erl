@@ -1,7 +1,10 @@
 -module(jhw_upload_sell).
 
--define(FILE_HEAD, <<"店内码,名称,数量,售价"/utf8>>).
--define(FILE_HEAD_LEN, 240).
+%% 商品名称，条形码，商品店内码，正常售价
+-define(EXCEL_NAME, 		<<"商品名称/utf8">>).
+-define(EXCEL_CODE, 		<<"商品店内码/utf8">>).
+-define(EXCEL_COUNT, 		<<"数量/utf8">>).
+-define(EXCEL_PRICE, 		<<"售价/utf8">>).
 
 
 -export([init/2]).
@@ -32,7 +35,7 @@ init(Req, Opts) ->
 
 check(Phone, Key, FileData, Mid) ->
 	case jhw_auth:check(Phone, Key) of
-		ok -> create(FileData, Mid);
+		ok -> create_sql(FileData, Mid);
 		Error -> 
 			jsx:encode([
 				{<<"status">>, <<"error">>},
@@ -41,58 +44,55 @@ check(Phone, Key, FileData, Mid) ->
 	end.
 
 
-create(<<Head:?FILE_HEAD_LEN, Body/binary>>, Mid) ->
-	case <<Head:?FILE_HEAD_LEN>> == ?FILE_HEAD of
-		true -> 
-			create_sql(Body, Mid);
-		false ->
-			Msg = unicode:characters_to_binary(io_lib:format("标准格式：~ts, 上传格式：~ts", [?FILE_HEAD, <<Head:?FILE_HEAD_LEN>>])),
-			jsx:encode([
-				{<<"status">>, <<"error">>},
-				{<<"errorMsg">>, Msg}
-			])
-	end.
-	
+
 
 
 create_sql(Bin, Mid) ->
-	BodyList = binary:split(Bin, <<"\r\n">>, [global]),
+	[Header|BodyList] = binary:split(Bin, <<"\r\n">>, [global]),
 	CurTime = jhw_util:curtime(),
-	create_sql(BodyList, [], [], Mid, CurTime).
+
+	IndexList = lists:seq(1, length(Header)),
+	KeyList = lists:zip(Header, IndexList),
+	create_sql(BodyList, KeyList, [], [], Mid, CurTime).
 
 
-create_sql([<<>>|List], SqlList, ErrorList, Mid, CurTime) ->
-	create_sql(List, SqlList, ErrorList, Mid, CurTime);
-create_sql([Body|List], SqlList, ErrorList, Mid, CurTime) ->
-	case binary:split(Body, <<",">>, [global]) of
-		[Code, Name, CountBin, SellPriceBin] ->
-			Count = jhw_util:binary_to_num(CountBin),
-			SellPrice = jhw_util:binary_to_num(SellPriceBin),
+create_sql([<<>>|List], KeyList, SqlList, ErrorList, Mid, CurTime) ->
+	create_sql(List, KeyList, SqlList, ErrorList, Mid, CurTime);
+create_sql([Body|List], KeyList, SqlList, ErrorList, Mid, CurTime) ->
+	ValueList = binary:split(Body, <<",">>, [global]),
+	{_, NameIndex} = lists:keyfind(?EXCEL_NAME, 1, KeyList),
+	{_, CodeIndex} = lists:keyfind(?EXCEL_CODE, 1, KeyList),
+	{_, CountIndex} = lists:keyfind(?EXCEL_COUNT, 1, KeyList),
+	{_, PriceIndex} = lists:keyfind(?EXCEL_PRICE, 1, KeyList),
 
-			SelectSql = io_lib:format("select `count`, `buyPrice` from stock where `mid` = '~s' and `code` = '~s'", [Mid, Code]),
-			{Profit, SqlList1, Price} = 
-				case jhw_sql:run(SelectSql) of
-					{ok, _, [[OldCount, BuyPrice]]} -> 
-						io:format("info:~p~n", [[OldCount, BuyPrice, SellPrice, Count]]),
-						ProfitTmp = SellPrice - Count * BuyPrice,
-						LastCount = 
-							case OldCount - Count >= 0 of
-								true -> OldCount - Count;
-								false -> 
-									io:format("count:~p, oldCount:~p~n", [Count, OldCount]),
-									0
-							end,
-						UpdateStock = io_lib:format("update stock set `count` = '~p' where `mid` = '~s' and `code` = '~s'", [LastCount, Mid, Code]),
-						{ProfitTmp, [UpdateStock|SqlList], BuyPrice};
-					_ ->
-						{SellPrice, SqlList, 0}
-				end,
-			Sql = io_lib:format("replace into sale(`mid`,`code`,`time`,`name`,`count`,`sale`, `buyPrice` `profit`) values ('~s','~s','~p','~s','~p','~p','~p','~p');", [Mid, Code, CurTime, Name, Count, SellPrice, Price, Profit]),
-			create_sql(List, [Sql|SqlList1], ErrorList, Mid, CurTime);
-		_ ->
-			create_sql(List, SqlList, [Body|ErrorList], Mid, CurTime)
-	end;
-create_sql([], SqlList, ErrorList, _Mid, _CurTime) ->
+	Name = lists:nth(NameIndex, ValueList),
+	Code = lists:nth(CodeIndex, ValueList),
+	CountBin = lists:nth(CountIndex, ValueList),
+	PriceBin = lists:nth(PriceIndex, ValueList),
+	Count = jhw_util:binary_to_num(CountBin),
+	SellPrice = jhw_util:binary_to_num(PriceBin),
+
+	SelectSql = io_lib:format("select `count`, `buyPrice` from stock where `mid` = '~s' and `code` = '~s'", [Mid, Code]),
+	{Profit, SqlList1, Price} = 
+		case jhw_sql:run(SelectSql) of
+			{ok, _, [[OldCount, BuyPrice]]} -> 
+				io:format("info:~p~n", [[OldCount, BuyPrice, SellPrice, Count]]),
+				ProfitTmp = SellPrice - Count * BuyPrice,
+				LastCount = 
+					case OldCount - Count >= 0 of
+						true -> OldCount - Count;
+						false -> 
+							io:format("count:~p, oldCount:~p~n", [Count, OldCount]),
+							0
+					end,
+				UpdateStock = io_lib:format("update stock set `count` = '~p' where `mid` = '~s' and `code` = '~s'", [LastCount, Mid, Code]),
+				{ProfitTmp, [UpdateStock|SqlList], BuyPrice};
+			_ ->
+				{SellPrice, SqlList, 0}
+		end,
+	Sql = io_lib:format("replace into sale(`mid`,`code`,`time`,`name`,`count`,`sale`, `buyPrice` `profit`) values ('~s','~s','~p','~s','~p','~p','~p','~p');", [Mid, Code, CurTime, Name, Count, SellPrice, Price, Profit]),
+	create_sql(List, KeyList, [Sql|SqlList1], ErrorList, Mid, CurTime);
+create_sql([], _KeyList, SqlList, ErrorList, _Mid, _CurTime) ->
 	case jhw_sql:transaction(SqlList) of
 		{atomic, SuccList} ->
 			jsx:encode([
