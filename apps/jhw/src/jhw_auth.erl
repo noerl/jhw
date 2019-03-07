@@ -29,8 +29,8 @@ handle(Req, Map) ->
 
 
 handle(Uid, Secret, Map) ->
-	case ets:lookup(user, Uid) of
-		[#user{secret = Secret, expire = Expire}] ->
+	case ets:lookup(admin, Uid) of
+		[#admin{secret = Secret, expire = Expire}] ->
 			CurTime = jhw_util:curtime(),
 			case Expire >= CurTime of
 				true -> 
@@ -44,10 +44,10 @@ handle(Uid, Secret, Map) ->
 
 
 check(Phone, Code) ->
-	Ms = ets:fun2ms(fun(User) when User#user.phone =:= Phone andalso User#user.captcha =:= Code -> User end),
-	case ets:select(user, Ms) of
+	Ms = ets:fun2ms(fun(Admin) when Admin#admin.phone =:= Phone andalso Admin#admin.captcha =:= Code -> Admin end),
+	case ets:select(admin, Ms) of
 		[] -> {error, 1101};
-		_User -> ok
+		_Admin -> ok
 	end.
 
 

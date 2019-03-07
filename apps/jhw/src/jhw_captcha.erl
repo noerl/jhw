@@ -15,15 +15,15 @@ init(Req0, Opts) ->
 
 handle(#{id := Uid}) ->
     CurTime = jhw_util:curtime(),
-    case ets:lookup(user, Uid) of
-        [User] -> 
+    case ets:lookup(admin, Uid) of
+        [Admin] -> 
             Captcha = 
-                case (User#user.captchaTime =/= undefined) andalso (User#user.captchaTime < CurTime + 60) of 
+                case (Admin#admin.captchaTime =/= undefined) andalso (Admin#admin.captchaTime < CurTime + 60) of 
                     true -> 
-                        User#user.captcha;
+                        Admin#admin.captcha;
                     false ->
                         CaptchaTmp = jhw_util:captcha(),
-                        ets:insert(user, User#user{captcha = CaptchaTmp, captchaTime = CurTime}),
+                        ets:insert(admin, Admin#admin{captcha = CaptchaTmp, captchaTime = CurTime}),
                         CaptchaTmp
                 end,
             {ok, jsx:encode([{<<"status">>, <<"ok">>},{<<"captcha">>, Captcha}])};

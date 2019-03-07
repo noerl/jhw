@@ -9,9 +9,9 @@ init(Req0, Opts) ->
 
 
 handle(#{id := Id}) ->
-	case ets:lookup(user, Id) of
-        [User] -> 
-            ets:insert(user, User#user{pid = self()}),
+	case ets:lookup(admin, Id) of
+        [Admin] -> 
+            ets:insert(admin, Admin#admin{pid = self()}),
             hold();
         [] -> 
             {error, 12000}
@@ -32,6 +32,6 @@ hold() ->
 
 
 broadcast(Id, Body) ->
-    User = ets:tab2list(user),
-    [Pid ! {ok, Body} || #user{id = Uid, pid = Pid} <- User, Uid =/= Id].
+    Admin = ets:tab2list(admin),
+    [Pid ! {ok, Body} || #admin{id = Uid, pid = Pid} <- Admin, Uid =/= Id].
         

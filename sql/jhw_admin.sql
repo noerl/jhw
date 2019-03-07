@@ -16,23 +16,20 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `sale`
+-- Table structure for table `admin`
 --
 
-DROP TABLE IF EXISTS `sale`;
+DROP TABLE IF EXISTS `admin`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `sale` (
-  `mid` int(11) NOT NULL,
-  `code` varchar(16) NOT NULL,
-  `time` int(11) NOT NULL,
-  `name` varchar(32) DEFAULT NULL,
-  `count` int(11) DEFAULT NULL,
-  `sale` float DEFAULT NULL,
-  `buyPrice` float DEFAULT NULL,
-  `profit` float DEFAULT NULL,
-  PRIMARY KEY (`mid`,`code`,`time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `admin` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(8) DEFAULT NULL,
+  `phone` varchar(11) DEFAULT NULL,
+  `pwd` varchar(16) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_phone` (`phone`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

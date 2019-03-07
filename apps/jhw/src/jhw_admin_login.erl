@@ -1,4 +1,4 @@
--module(jhw_login).
+-module(jhw_admin_login).
 
 -include("jhw.hrl").
 
@@ -7,13 +7,13 @@
 init(Req0, Opts) ->
 	{ok, BodyCipher, Req} = cowboy_req:read_body(Req0),
 	Body = jhw_auth:decode(BodyCipher),
-	
 	UUID = cowboy_req:header(<<"uuid">>, Req0),
 	PostList = jsx:decode(Body),
 	Phone = proplists:get_value(<<"phone">>, PostList),
 	Password = proplists:get_value(<<"pwd">>, PostList),
 
 	{RespHeader, RespBody} = handle(UUID, Phone, Password),
+	
 	NewReq = jhw_auth:resp(Req, RespHeader, RespBody),
 	{ok, NewReq, Opts}.
 
@@ -38,7 +38,7 @@ check(UUID, Phone, PwdMd5) ->
 		{ok, Uid, Name, Pwd} ->
 			case check_pwd(Pwd, PwdMd5, UUID) of
 				{ok, Session, Expire} ->
-					ets:insert(user, #user{id = Uid, phone = Phone, name = Name, secret = Session, expire = Expire}),
+					ets:insert(admin, #admin{id = Uid, phone = Phone, name = Name, secret = Session, expire = Expire}),
 					RespBody = user(Uid, Name),
 					RespHeader = #{<<"jhw">> => Session, <<"expire">> => integer_to_binary(Expire)},
 					{ok, RespHeader, RespBody};
@@ -52,7 +52,7 @@ check(UUID, Phone, PwdMd5) ->
 
 
 check_phone(Phone) ->
-	Sql = io_lib:format("select id, name, pwd from user where phone = '~s' limit 1", [Phone]),
+	Sql = io_lib:format("select `id`, `name`, `pwd` from `admin` where `phone` = '~s' limit 1", [Phone]),
 	case jhw_sql:run(Sql) of
 		{ok, _, [[Uid, Name, Pwd]]} -> 
 			{ok, Uid, Name, Pwd};

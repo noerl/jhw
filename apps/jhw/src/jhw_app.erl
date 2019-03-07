@@ -25,7 +25,13 @@ start(_StartType, _StartArgs) ->
 			{"/buy", jhw_html_buy, []},
 			{"/sell", jhw_html_sell, []},
 			{"/", jhw_main, []},
-			{"/login", jhw_login, []},
+			{"/admin/login", jhw_admin_login, []},
+			{"/admin/update", jhw_admin_update, []},
+			{"/user/add", jhw_user_add, [jhw_auth]},
+			{"/user/del", jhw_user_del, [jhw_auth]},
+			{"/user/login", jhw_user_login, []},
+			{"/user/update", jhw_user_update, []},
+			{"/user/push", jhw_user_push, []},
 			{"/captcha", jhw_captcha, [jhw_auth]},
 			{"/mall", jhw_mall, [jhw_auth]},
 			{"/mall/add", jhw_mall_add, [jhw_auth]},
@@ -60,7 +66,7 @@ stop(_State) ->
 
 
 cache() ->
-	ets:new(user, [named_table, public, {keypos, #user.id}]),
+	ets:new(admin, [named_table, public, {keypos, #admin.id}]),
 	ets:new(mall, [named_table, public, {keypos, #mall.id}]),
 	ets:new(supplier, [named_table, public, {keypos, #supplier.id}]),
 	ets:new(html, [named_table, public, {keypos, #html.key}]),

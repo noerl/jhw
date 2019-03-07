@@ -1,4 +1,4 @@
--record(user, {
+-record(admin, {
 	id,
 	pid,
 	phone,
